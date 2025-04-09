@@ -7,17 +7,19 @@ import java.util.Vector;
 /** Compiled_Function_T */
 public class Closure_T implements Object_T {
 
-    Compiled_Function_T func;
+    Object_T obj;
     Vector<Object_T> free;
+    String closureType;
 
-    public Closure_T(Compiled_Function_T func) {
+    public Closure_T(Object_T obj, String type) {
 
-        this.func = func;
+        this.obj = obj;
+        this.closureType = type;
         this.free = new Vector<Object_T>();
     }
 
-    public Closure_T(Compiled_Function_T func, Vector<Object_T> free) {
-        this.func = func;
+    public Closure_T(Object_T obj, Vector<Object_T> free, String type) {
+        this(obj, type);
         this.free = free;
     }
 
@@ -35,7 +37,11 @@ public class Closure_T implements Object_T {
         return this.free;
     }
 
-    public Compiled_Function_T getFunction() {
-        return this.func;
+    public Object_T getObject() {
+        return this.obj;
+    }
+
+    public String getClosureType() {
+        return this.closureType;
     }
 }

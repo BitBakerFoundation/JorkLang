@@ -119,19 +119,20 @@ public class Compiler {
                 this.emit(OpCodes.OpPop);
                 return null;
             case BlockStatement bs:
-
-                // this.enterScope();
+                this.enterScope();
                 for (Statement s : bs.getStatements()) {
                     err = this.compile(s);
                     if (err != null) {
                         return err;
                     }
                 }
-                // int numLocals = this.symbolTable.numDefinitions;
+                int numLocals = this.symbolTable.numDefinitions;
 
-                // Vector<Byte> instructions = this.leaveScope();
+                Vector<Byte> instructions = this.leaveScope();
+                Compiled_Block_T block = new Compiled_Block_T(instructions, numLocals);
+                int blockIndex = this.addConstant(block);
 
-                // this.emit(OpCodes.OpClosure,0 , 0);
+                this.emit(OpCodes.OpClosure, blockIndex, 0);
                 return null;
             case LetStatement ls:
                 err = this.compile(ls.getValue());
@@ -445,10 +446,10 @@ public class Compiler {
                     this.emit(OpCodes.OpReturn);
                 }
                 Vector<Symbol> freeSymbols = this.symbolTable.freeSymbols;
-                int numLocals = this.symbolTable.numDefinitions;
+                numLocals = this.symbolTable.numDefinitions;
 
                 // this.setSymbol(symbol);
-                Vector<Byte> instructions = this.leaveScope();
+                instructions = this.leaveScope();
 
                 for (Symbol s : freeSymbols) {
                     this.loadSymbol(s);

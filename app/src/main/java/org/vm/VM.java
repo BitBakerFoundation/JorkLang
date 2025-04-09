@@ -34,7 +34,8 @@ public class VM {
 
         this.frames = Helper.<Frame>createVector(MaxFrames, null);
         Compiled_Function_T mainFunc = new Compiled_Function_T(bytecode.getInstructions());
-        Closure_T mainClosure = new Closure_T(mainFunc);
+        Closure_T mainClosure =
+                new Closure_T((Object_T) mainFunc, TypeList.COMPILED_FUNCTION_OBJECT);
         Frame mainFrame = new Frame(mainClosure, 0);
         this.frames.set(0, mainFrame);
         this.constants = bytecode.getConstants();
@@ -71,7 +72,9 @@ public class VM {
             }
             this.sp = this.sp - numFree;
 
-            return this.push(new Closure_T((Compiled_Function_T) constant, free));
+            return this.push(new Closure_T(constant, free, TypeList.COMPILED_FUNCTION_OBJECT));
+        } else if (constant instanceof Compiled_Block_T) {
+            return this.push(new Closure_T(constant, TypeList.COMPILED_BLOCK_OBJECT));
         }
         return new VMError("", "Not a Function : " + constant);
         // this.frameIndex++;
@@ -335,18 +338,28 @@ public class VM {
     }
 
     VMError callClosure(Closure_T cl, int numArgs) {
-        if (numArgs != cl.getFunction().getNumParameters()) {
-            return new VMError(
-                    "",
-                    "wrong number of arguments: want: "
-                            + cl.getFunction().getNumParameters()
-                            + "got= "
-                            + numArgs);
+        switch (cl.getClosureType()) {
+            case TypeList.COMPILED_FUNCTION_OBJECT:
+                Compiled_Function_T cf = (Compiled_Function_T) cl.getObject();
+                if (numArgs != cf.getNumParameters()) {
+                    return new VMError(
+                            "",
+                            "wrong number of arguments: want: "
+                                    + cf.getNumParameters()
+                                    + "got= "
+                                    + numArgs);
+                }
+                Frame frame = new Frame(cl, this.sp - numArgs);
+                this.pushFrame(frame);
+                this.sp = frame.basePointer + cf.getNumLocals();
+                break;
+            case TypeList.COMPILED_BLOCK_OBJECT:
+                Compiled_Block_T cb = (Compiled_Block_T) cl.getObject();
+                frame = new Frame(cl, this.sp);
+                this.pushFrame(frame);
+                this.sp = frame.basePointer + cb.getNumLocals();
+                break;
         }
-        Frame frame = new Frame(cl, this.sp - numArgs);
-        this.pushFrame(frame);
-        this.sp = frame.basePointer + cl.getFunction().getNumLocals();
-
         return null;
     }
 
